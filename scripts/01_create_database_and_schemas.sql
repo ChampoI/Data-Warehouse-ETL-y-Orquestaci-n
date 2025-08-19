@@ -1,0 +1,10 @@
+-- 01_create_database_and_schemas.sql
+IF DB_ID('DWH_Demo') IS NULL
+  CREATE DATABASE DWH_Demo;
+GO
+USE DWH_Demo;
+GO
+IF SCHEMA_ID('stg') IS NULL EXEC('CREATE SCHEMA stg');
+IF SCHEMA_ID('dwh') IS NULL EXEC('CREATE SCHEMA dwh');
+IF SCHEMA_ID('ref') IS NULL EXEC('CREATE SCHEMA ref');
+GO
