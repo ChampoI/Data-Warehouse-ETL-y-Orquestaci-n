@@ -1,72 +1,144 @@
-# SQL Server Data Warehouse Starter 
+# Data Warehouse – ETL y Orquestación
 
-Este proyecto crea un **Data Warehouse** en **SQL Server** con datos ficticios. 
-Incluye modelo dimensional (star schema), **SCD Tipo 2** para clientes, staging, hechos, vistas de presentación, datos de ejemplo y opciones de ejecución local o con **Docker**.
+## 📖 Descripción General
+Este proyecto es una **demostración de Data Warehouse** que simula un flujo ETL completo utilizando **SQL Server**, **Python** y **Docker**.  
+Se muestran conceptos clave como:
+- **Área de staging** para la ingestión de datos crudos.
+- **Slowly Changing Dimensions (SCD)**:
+  - SCD2 para clientes (histórico de cambios).
+  - SCD1 para productos (último valor).
+- **Carga de tabla de hechos** para transacciones de ventas.
+- **Vistas analíticas** optimizadas con índices e índices columnstore.
 
-## Contenido
+El proyecto usa **datasets CSV** como fuente (`customers`, `products`, `sales`) y provee scripts de orquestación para Linux/macOS y Windows.
+
+---
+
+## 📂 Estructura del Proyecto
 ```
-DWH_SQLServer_Starter/
-├─ README.md
-├─ docker-compose.yml
-├─ .env.sample
-├─ scripts/
-│  ├─ run_all.sql
-│  ├─ 01_create_database_and_schemas.sql
-│  ├─ 02_dim_date.sql
-│  ├─ 03_dim_customer.sql
-│  ├─ 04_dim_product.sql
-│  ├─ 05_fact_sales.sql
-│  ├─ 06_staging.sql
-│  ├─ 07_views.sql
-│  ├─ 08_indexes.sql
-│  ├─ 09_procedures.sql
-│  └─ 10_pipeline_example.sql
-├─ data/
-│  ├─ customers_initial.csv
-│  ├─ customers_changes.csv
-│  ├─ products.csv
-│  └─ sales.csv
-├─ etl/
-│  ├─ generate_and_load.py
-│  └─ requirements.txt
-└─ orchestration/
-   ├─ run_etl.ps1
-   └─ run_etl.sh
+.
+├── data/                  # Datasets fuente en CSV
+│   ├── customers_initial.csv
+│   ├── customers_changes.csv
+│   ├── products.csv
+│   └── sales.csv
+│
+├── etl/                   # Pipeline ETL en Python
+│   ├── generate_and_load.py
+│   └── requirements.txt
+│
+├── orchestration/          # Scripts de ejecución
+│   ├── run_etl.sh          # Linux/macOS
+│   └── run_etl.ps1         # Windows PowerShell
+│
+├── scripts/                # Definición del DWH en SQL
+│   ├── 01_create_database_and_schemas.sql
+│   ├── 02_dim_date.sql
+│   ├── 03_dim_customer.sql
+│   ├── 04_dim_product.sql
+│   ├── 05_fact_sales.sql
+│   ├── 06_staging.sql
+│   ├── 07_views.sql
+│   ├── 08_indexes.sql
+│   ├── 09_procedures.sql
+│   ├── 10_pipeline_example.sql
+│   └── run_all.sql         # Script maestro
+│
+├── .env.sample             # Configuración de variables de entorno
+├── docker-compose.yml      # Configuración Docker para SQL Server
 ```
 
-## Requisitos
-- **Opción A (local)**: SQL Server local o remoto accesible y VS Code con extensión **SQL Server (mssql)**.
-- **Opción B (Docker)**: Docker Desktop.
-- **Python 3.10+** para ejecutar el ETL (opcional, ya vienen CSVs pre-generados).
+---
 
-## Ejecución rápida en VS Code (Opción A)
-1. Asegúrate de tener un servidor SQL Server accesible (local o remoto).
-2. Abre la carpeta del proyecto en VS Code. Instala la extensión **SQL Server (mssql)** si no la tienes.
-3. Abre `scripts/run_all.sql` y conéctate al servidor (usa `DWH_Demo` como nombre de base).
-4. Ejecuta el script completo. Esto creará la base, esquemas, tablas, vistas, índices y procedimientos, y poblará **DimDate**.
-5. (Opcional) Para cargar datos desde CSVs: ejecuta `etl/generate_and_load.py` (configura `.env` si usarás Docker u otro servidor).
+## ⚙️ Prerrequisitos
+- **Docker & Docker Compose**
+- **Python 3.9+**
+- **ODBC Driver 17 for SQL Server**
+- **Herramienta cliente SQL** (SSMS, Azure Data Studio o VS Code con extensión `mssql`)
 
-## Ejecución con Docker (Opción B)
-1. Copia `.env.sample` a `.env` y ajusta credenciales si quieres.
-2. `docker compose up -d`
-3. Conéctate desde VS Code al servidor `localhost,1433` con usuario `sa` y la contraseña del `.env`.
-4. Corre `scripts/run_all.sql` (igual que en la opción A).
-5. Luego ejecuta el ETL: `python etl/generate_and_load.py`.
+---
 
-## Modelo (resumen)
-- **DimDate** (calendario).
-- **DimCustomer** (SCD Tipo 2 con `ValidFrom`, `ValidTo`, `IsCurrent`, `RowHash`).
-- **DimProduct** (SCD Tipo 1).
-- **FactSales** (hechos granulares por venta): referencias a Date, Customer y Product.
+## 🚀 Ejecución
 
-## Pipeline de ejemplo
-1. Cargar staging (`stg.Customer`, `stg.Product`, `stg.Sales`) desde CSVs (el ETL ya lo hace).
-2. Ejecutar `dwh.usp_upsert_DimCustomer_SCD2` y `dwh.usp_upsert_DimProduct_SCD1`.
-3. Ejecutar `dwh.usp_load_FactSales` (resuelve FKs y carga el hecho).
-4. Consultar `dwh.vw_Sales` desde Power BI/VS Code.
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/tu-repo/dwh-demo.git
+cd dwh-demo
+```
 
-## Notas
-- Los CSVs incluidos (`/data`) ya contienen datos ficticios para una primera carga y un set de cambios para probar SCD2.
-- Si usas Docker, recuerda que **BULK INSERT** requiere rutas del contenedor; por eso el ETL usa `pyodbc` con inserciones rápidas (no BULK).
+### 2. Configurar variables de entorno
+Copiar `.env.sample` a `.env` y editar con los parámetros de conexión:
+```bash
+cp .env.sample .env
+```
 
+Ejemplo:
+```env
+SQLSERVER_HOST=localhost
+SQLSERVER_PORT=1433
+SQLSERVER_USER=sa
+SQLSERVER_PASSWORD=P@ssw0rd12345!
+SQLSERVER_DB=DWH_Demo
+```
 
+### 3. Levantar SQL Server con Docker
+```bash
+docker-compose up -d
+```
+
+Esto inicia una instancia de **SQL Server** en `localhost:1433`.
+
+### 4. Desplegar el Data Warehouse
+Ejecutar el script maestro:
+- Desde **VS Code con extensión mssql** o **sqlcmd**:
+```sql
+:r scripts/run_all.sql
+```
+
+Esto crea todos los esquemas, dimensiones, hechos, índices, vistas y procedimientos.
+
+### 5. Ejecutar el ETL
+- En **Linux/macOS**:
+```bash
+bash orchestration/run_etl.sh
+```
+- En **Windows**:
+```powershell
+.\orchestration
+un_etl.ps1
+```
+
+Este proceso:
+1. Carga tablas de staging desde los CSV.  
+2. Ejecuta procedimientos almacenados para poblar dimensiones y hechos.  
+3. Aplica cambios en clientes simulando SCD2.  
+
+---
+
+## 📊 Modelo de Datos
+- **dwh.DimDate** → Dimensión de fechas (2019–2030).  
+- **dwh.DimCustomer** → Clientes con histórico (SCD2).  
+- **dwh.DimProduct** → Productos (SCD1).  
+- **dwh.FactSales** → Hechos de ventas.  
+- **dwh.vw_Sales** → Vista analítica uniendo hechos y dimensiones.  
+
+Incluye índices B-Tree y un **Clustered Columnstore Index** para rendimiento en consultas analíticas.
+
+---
+
+## 🧪 Validación
+Para validar la carga:
+```sql
+SELECT TOP 20 * FROM dwh.vw_Sales;
+```
+
+Deberías ver ventas enriquecidas con cliente y producto, y cambios históricos si se aplicó `customers_changes.csv`.
+
+---
+
+## 📌 Notas
+- Puedes usar `scripts/10_pipeline_example.sql` para volver a correr manualmente la lógica del ETL.  
+- El modelo puede ampliarse con más dimensiones/hechos.  
+- Para producción, se recomienda orquestar con **Airflow**, **Azure Data Factory** o **SQL Agent**.  
+
+---
