@@ -62,8 +62,8 @@ El proyecto usa **datasets CSV** como fuente (`customers`, `products`, `sales`) 
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/tu-repo/dwh-demo.git
-cd dwh-demo
+git clone https://github.com/ChampoI/Data-Warehouse-ETL-y-Orquestaci-n.git
+cd Data-Warehouse-ETL-y-Orquestaci-n
 ```
 
 ### 2. Configurar variables de entorno
